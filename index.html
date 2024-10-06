@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Material Entry Form</title>
+    <title>Material Entry Form with QR/Barcode Scanner</title>
+    <style>
+        #reader {
+            width: 300px;
+            height: 300px;
+        }
+    </style>
 </head>
 <body>
     <h2>Prime Engineering Lanks Pvt Ltd</h2>
@@ -31,7 +37,12 @@
                 <tr>
                     <td><input type="number" name="no"></td>
                     <td><input type="text" name="material"></td>
-                    <td><input type="text" name="serialNumber"></td>
+                    <td>
+                        <!-- Serial Number Field -->
+                        <input type="text" name="serialNumber" class="serial-input">
+                        <button type="button" onclick="startScan(this)">Scan QR/Barcode</button>
+                        <div id="reader" style="display:none;"></div>
+                    </td>
                     <td><input type="number" name="qty"></td>
                     <td><input type="text" name="remark"></td>
                 </tr>
@@ -42,14 +53,18 @@
         <button type="button" onclick="generatePDF()">Generate PDF</button>
     </form>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Include QR and Barcode Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+
     <script>
         function addRow() {
             const table = document.getElementById("materialsTable");
             const row = table.insertRow();
             row.innerHTML = '<td><input type="number" name="no"></td>' +
                             '<td><input type="text" name="material"></td>' +
-                            '<td><input type="text" name="serialNumber"></td>' +
+                            '<td><input type="text" name="serialNumber" class="serial-input">' +
+                            '<button type="button" onclick="startScan(this)">Scan QR/Barcode</button>' +
+                            '<div id="reader" style="display:none;"></div></td>' +
                             '<td><input type="number" name="qty"></td>' +
                             '<td><input type="text" name="remark"></td>';
         }
@@ -80,6 +95,37 @@
             }
 
             doc.save("material_form.pdf");
+        }
+
+        function startScan(button) {
+            const readerDiv = button.nextElementSibling;
+            const serialInput = button.previousElementSibling;
+            
+            readerDiv.style.display = 'block';  // Show the scanner UI
+
+            const html5QrCode = new Html5Qrcode(readerDiv.id);
+            html5QrCode.start(
+                { facingMode: "environment" },  // Use back camera
+                {
+                    fps: 10,    // Frame-per-second for the scanning
+                    qrbox: { width: 250, height: 250 }  // Define the scanning box size
+                },
+                (decodedText) => {
+                    // Set scanned result into the serial number input
+                    serialInput.value = decodedText;
+                    html5QrCode.stop().then(() => {
+                        readerDiv.style.display = 'none';  // Hide the scanner after successful scan
+                    }).catch(err => {
+                        console.error(err);
+                    });
+                },
+                (errorMessage) => {
+                    // Handle scan errors or lack of QR/barcode
+                    console.log("Scanning error: ", errorMessage);
+                }
+            ).catch(err => {
+                console.error("Error starting the scanner: ", err);
+            });
         }
     </script>
 </body>
